@@ -90,6 +90,7 @@ class ZipDCMDataSourceReader(DataSourceReader):
         from zipfile import ZipFile
         from pydicom import dcmread
         from pathlib import Path
+        import hashlib
         deep = False
 
         #
@@ -109,8 +110,9 @@ class ZipDCMDataSourceReader(DataSourceReader):
                     if len(name_in_zip) >= 3 and name_in_zip[-3:] == "dcm":
                         logger.debug(f" {name_in_zip} is a dcm file, reading" )
                         with zipFile.open(name_in_zip, 'r') as zip_fp:
-                            with dcmread(zip_fp, defer_size=1000, stop_before_pixels=(not deep)) as ds:
+                            with dcmread(zip_fp) as ds:
                                 meta = ds.to_json_dict()
+                                meta['pixel_hash'] = hashlib.sha1(ds.pixel_array).hexdigest()
                                 if meta is None:
                                     meta = ""
                                 for key in self.dicom_keys_filter:

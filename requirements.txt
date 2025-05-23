@@ -1,0 +1,15 @@
+Faker==37.3.0
+googleapis-common-protos==1.70.0
+grpcio==1.71.0
+grpcio-status==1.71.0
+numpy==2.2.6
+pandas==2.2.3
+protobuf==5.29.4
+py4j==0.10.9.7
+pyarrow==20.0.0
+pydicom==3.0.1
+pyspark==4.0.0.dev1
+python-dateutil==2.9.0.post0
+pytz==2025.2
+six==1.17.0
+tzdata==2025.2

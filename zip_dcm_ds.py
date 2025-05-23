@@ -112,7 +112,7 @@ class ZipDCMDataSourceReader(DataSourceReader):
                         with zipFile.open(name_in_zip, 'r') as zip_fp:
                             with dcmread(zip_fp) as ds:
                                 meta = ds.to_json_dict()
-                                meta['pixel_hash'] = hashlib.sha1(ds.pixel_array).hexdigest()
+                                meta['hash'] = hashlib.sha1(zip_fp.read()).hexdigest()
                                 if meta is None:
                                     meta = ""
                                 for key in self.dicom_keys_filter:

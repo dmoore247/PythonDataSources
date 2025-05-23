@@ -66,10 +66,15 @@ class ZipDCMDataSourceReader(DataSourceReader):
         """
         logger.debug(f"ZipDCMDataSourceReader.partitions({self.numPartitions}, {self.path}, paths: {self.paths}): ")
         length = len(self.paths)
-        return [ RangePartition(
-                    i * int(length/self.numPartitions), 
-                    (i+1) * int(length/self.numPartitions)) 
-                for i in range(self.numPartitions) ]
+        partitions = []
+        partition_size_max = int(max(1,length/self.numPartitions))
+        start = 0
+        while start < length:
+            end = min(length, start+partition_size_max)
+            partitions.append(RangePartition(start, end))
+            start = start + partition_size_max
+        logger.debug(f"#partitions {len(partitions)} {partitions}")
+        return partitions
 
     def read(self, partition) -> Iterator:
         """
@@ -152,10 +157,10 @@ if __name__ == "__main__":
 
     zip_file_path = './resources/dcms'
     r = ZipDCMDataSourceReader(
-        schema="x string, y string, z string",
+        schema="rowid, int, x string, y string, z string",
         options={
         'path': zip_file_path, 
-        'numPartitions': 2
+        'numPartitions': 32
         })
     partitions = r.partitions()
     logger.debug([_ for _ in partitions])

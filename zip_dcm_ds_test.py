@@ -43,7 +43,7 @@ def test_folder(spark):
     # test on a folder of zips
     df = (
         spark.read
-          .option('numPartitions','2')
+          .option('numPartitions','4')
           .format("zipdcm")
           .load("./resources/dcms")
     )

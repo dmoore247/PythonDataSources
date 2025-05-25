@@ -1,6 +1,7 @@
 import logging
-from typing import Iterator, Sequence, Tuple
+from typing import Iterator, Sequence, Tuple, Union
 
+from pyarrow import RecordBatch
 from pyspark.sql.datasource import DataSource, DataSourceReader, InputPartition
 from pyspark.sql.types import StructType
 
@@ -28,21 +29,21 @@ class ZipDCMDataSourceReader(DataSourceReader):
         self.schema: StructType = schema
         self.options = options
         self.path = self.options.get("path", None)
+        self.pathGlobFilter = self.options.get("pathGlobFilter", "*.zip")
+        self.recursiveFileLookup = bool(
+            self.options.get("recursiveFileLookup", "false")
+        )
         self.numPartitions = int(
             self.options.get("numPartitions", DEFUALT_numPartitions)
         )
         self.deep = False
-        self.paths = None
-
         self.dicom_keys_filter = self.options.get(
             "dicomKeysFilter", DEFAULT_dicomKeysFilter
         ).split(",")
-
         assert self.path is not None
+        self.paths = _path_handler(self.path, self.pathGlobFilter)
 
-        self.paths = _path_handler(self.path)
-
-    def partitions(self) -> Sequence[InputPartition]:
+    def partitions(self) -> Sequence[RangePartition]:
         """
         Compute 'splits' of the data to read
             self.paths is the list of files discovered and now need to be partitioned.
@@ -61,7 +62,9 @@ class ZipDCMDataSourceReader(DataSourceReader):
         logger.debug(f"#partitions {len(partitions)} {partitions}")
         return partitions
 
-    def read(self, partition: RangePartition) -> Iterator[Tuple]:
+    def read(
+        self, partition: InputPartition
+    ) -> Union[Iterator[Tuple], Iterator["RecordBatch"]]:
         """
         Executor level method, performs read by Range Partition
         """

@@ -4,7 +4,7 @@ import sys
 import pytest
 from pyspark.sql import SparkSession
 
-from zip_dcm_ds import ZipDCMDataSource, ZipDCMDataSourceReader
+from zip_dcm_ds import RangePartition, ZipDCMDataSource, ZipDCMDataSourceReader
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
@@ -65,7 +65,7 @@ def test_wrongpath(spark):
             .format("zipdcm")
             .load("./resources/wrongpath")
         )
-        result = df.collect()
+        df.collect()
 
 
 def test_dcm(spark):
@@ -76,7 +76,21 @@ def test_dcm(spark):
     )
     result = df.collect()
     assert len(result) == 1
+    assert result[0]["path"] == "resources/dcms/y/1-1.dcm"
     logger.debug(f"test_single result: {result}")
+
+
+def test_dcm_glob(spark):
+    df = (
+        spark.read.option("numPartitions", "2")
+        .format("zipdcm")
+        .option("pathGlobFilter", "*.dcm")
+        .load("./resources/dcms")
+    )
+    result = df.orderBy(df.path, ascending=False).collect()
+    assert len(result) == 2
+    assert result[0]["path"] == "resources/dcms/y/1-1.dcm"
+    logger.debug(f"test_dcm_glob result: {result}")
 
 
 def test_single(spark):

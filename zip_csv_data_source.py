@@ -41,7 +41,7 @@ class ZipDataSourceReader(DataSourceReader):
                         for name in zipFile.namelist():
                             with zipFile.open(name, "r") as zipfile:
                                 for line in zipfile:
-                                    yield [f"{file}, {name}, {line.rstrip()}"]
+                                    yield [f"{file}, {name} {line.decode('utf-8')}"]
             else:
                 # single zip file
                 with ZipFile(file, "r") as zipFile:
@@ -49,7 +49,7 @@ class ZipDataSourceReader(DataSourceReader):
                         with zipFile.open(name, "r") as zipfile:
                             for line in zipfile:
                                 print(type(line))
-                                yield [f"{file}, {name}, {line.rstrip()}"]
+                                yield [f"{file}, {name} {line.decode('utf-8')}"]
         except Exception as e:
             print(e)
 

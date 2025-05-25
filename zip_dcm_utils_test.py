@@ -37,7 +37,7 @@ def test_readzipdcm_single_zip():
     zip_file_path = "./resources/dcms/y/y.zip"
     part = RangePartition(0, 1)
     paths = [zip_file_path]
-    dicom_keys_filter = []
+    dicom_keys_filter: list[str] = []
     res = _readzipdcm(part, paths, dicom_keys_filter)
     logger.debug(res)
 
@@ -48,7 +48,7 @@ def test_readzipdcm_single_dcm():
     zip_file_path = "./resources/dcms/y/1-1.dcm"
     part = RangePartition(0, 1)
     paths = [zip_file_path]
-    dicom_keys_filter = []
+    dicom_keys_filter: list[str] = []
     res = _readzipdcm(part, paths, dicom_keys_filter)
     print(type([_ for _ in res]))
 

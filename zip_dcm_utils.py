@@ -1,6 +1,7 @@
 import logging
 from io import BufferedReader
-from typing import Any, Iterator, List
+from pathlib import Path
+from typing import IO, Any, Iterator, List, Union
 
 from pyspark.sql.datasource import InputPartition
 
@@ -18,7 +19,7 @@ class RangePartition(InputPartition):
 
 
 def _readzipdcm(
-    partition: RangePartition, paths: list, dicom_keys_filter: list
+    partition: RangePartition, paths: list, dicom_keys_filter: list[str]
 ) -> Iterator[List[Any]]:
     """
     Generator function to extract DICOM metadata from .dcm files within ZIP archives.
@@ -55,11 +56,11 @@ def _readzipdcm(
 
     from pydicom import dcmread
 
-    def _handle_dcm_fp(fp: BufferedReader):
+    def _handle_dcm_fp(fp: Union[BufferedReader, IO]):
         with dcmread(fp) as ds:
             meta = ds.to_json_dict()
             meta["hash"] = hashlib.sha1(fp.read()).hexdigest()
-            meta["pixel_hash"] = hashlib.sha1(ds.pixel_array).hexdigest()
+            meta["pixel_hash"] = hashlib.sha1(ds.PixelData).hexdigest()
             if meta is None:
                 meta = ""
             for key in dicom_keys_filter:
@@ -87,7 +88,9 @@ def _readzipdcm(
                             ]
 
 
-def _path_handler(path: str) -> list:
+def _path_handler(
+    path: str, pathGlobFilter="*.zip", recursiveFileLookup=True
+) -> list[Path]:
     #
     # In this implementation, we validate the path,
     # and get the list of the paths to scan.
@@ -110,15 +113,13 @@ def _path_handler(path: str) -> list:
     if p.is_dir():
         # a folder of zips
         # TODO: .glob() performance at extreme scales limits scale
-        paths = sorted(Path(path).glob("**/*.zip"))
+        paths = sorted(Path(path).glob(f"**/{pathGlobFilter}"))
     else:
-        if not (
-            str(p).endswith(".dcm")
-            or str(p).endswith(".zip")
-            or str(p).endswith(".Zip")
-        ):
-            raise ValueError(f"File {path} does not have a .zip or .Zip extension")
-        paths = [path]
+        if not (str(p).lower().endswith(".dcm") or str(p).lower().endswith(".zip")):
+            raise ValueError(
+                f"File {path} does not have an allowed extension (dcm,zip,Zip)"
+            )
+        paths = [Path(path)]
 
     length = len(paths)
     logger.debug(f"#zipfiles: {length}, paths:{paths}")

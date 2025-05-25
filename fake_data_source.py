@@ -1,6 +1,5 @@
-from pyspark.sql.datasource import DataSource, DataSourceReader
+from pyspark.sql.datasource import DataSource, DataSourceReader, InputPartition
 from pyspark.sql.types import StructType
-from pyspark.sql.datasource import InputPartition
 
 
 class RangePartition(InputPartition):
@@ -28,9 +27,10 @@ class FakeDataSourceReader(DataSourceReader):
 
     def read(self, partition):
         # Library imports must be within the method.
-        from faker import Faker
-        import random
         import datetime
+        import random
+
+        from faker import Faker
 
         fake = Faker()
 

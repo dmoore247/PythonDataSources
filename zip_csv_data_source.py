@@ -1,7 +1,7 @@
-from pyspark.sql.datasource import DataSource, DataSourceReader
-from pyspark.sql.types import StructType
-from pyspark.sql.datasource import InputPartition
 from pathlib import Path
+
+from pyspark.sql.datasource import DataSource, DataSourceReader, InputPartition
+from pyspark.sql.types import StructType
 
 
 class RangePartition(InputPartition):

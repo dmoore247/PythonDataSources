@@ -33,7 +33,7 @@ def spark():
 def test_ZipDCMDataSourceReader():
     zip_file_path = "./resources/dcms"
     r = ZipDCMDataSourceReader(
-        schema="rowid, int, x string, y string, z string",
+        schema="rowid INT, path STRING, meta STRING",
         options={"path": zip_file_path, "numPartitions": 32},
     )
     partitions = r.partitions()

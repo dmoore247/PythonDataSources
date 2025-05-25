@@ -75,7 +75,7 @@ class ZipDCMDataSource(DataSource):
         return datasource_type
 
     def schema(self):
-        schema = "rowid INT, zipfile STRING, dcmfile STRING, meta STRING"
+        schema = "rowid INT, path STRING, meta STRING"
         logger.debug(f"ZipDCMDataSource.schema({schema}): ")
         return schema
 
@@ -85,6 +85,5 @@ class ZipDCMDataSource(DataSource):
 
 
 if __name__ == "__main__":
-    from zip_dcm_ds_test import test_nospark
-
-    test_nospark()
+    from zip_dcm_ds_test import test_ZipDCMDataSourceReader
+    test_ZipDCMDataSourceReader()

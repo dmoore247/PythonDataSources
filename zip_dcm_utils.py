@@ -46,29 +46,34 @@ def _readzipdcm(
 
     from pydicom import dcmread
 
+    def _handle_dcm_fp(fp):
+        with dcmread(fp) as ds:
+            meta = ds.to_json_dict()
+            meta["hash"] = hashlib.sha1(fp.read()).hexdigest()
+            meta["pixel_hash"] = hashlib.sha1(
+                ds.pixel_array
+            ).hexdigest()
+            if meta is None:
+                meta = ""
+            for key in dicom_keys_filter:
+                if key in meta:
+                    del meta[key]
+            logger.debug(f"meta: {meta}")
+            return meta
+
     rowid = partition.start
-    for zip_file_path in paths[partition.start : partition.end]:
-        logger.debug(f"zipfile: {zip_file_path}")
-        with ZipFile(zip_file_path, "r") as zipFile:
-            for name_in_zip in zipFile.namelist():
-                logger.debug(f" processing {zip_file_path}/{name_in_zip}")
-                if len(name_in_zip) >= 3 and name_in_zip[-3:] == "dcm":
-                    logger.debug(f" {name_in_zip} is a dcm file, reading")
-                    with zipFile.open(name_in_zip, "r") as zip_fp:
-                        with dcmread(zip_fp) as ds:
-                            meta = ds.to_json_dict()
-                            meta["hash"] = hashlib.sha1(zip_fp.read()).hexdigest()
-                            meta["pixel_hash"] = hashlib.sha1(
-                                ds.pixel_array
-                            ).hexdigest()
-                            if meta is None:
-                                meta = ""
-                            for key in dicom_keys_filter:
-                                if key in meta:
-                                    del meta[key]
-                            # logger.debug(f"meta: {meta}")
-                            rowid += 1
-                            yield [rowid, str(zip_file_path), name_in_zip, meta]
+    for path in paths[partition.start : partition.end]:
+        logger.debug(f"processing path: {path}")
+        if str(path).endswith(".dcm"):
+            with open(path,"rb") as fp:
+                yield [rowid, path, _handle_dcm_fp(fp)]
+        else:
+            with ZipFile(path, "r") as zipFile:
+                for name_in_zip in zipFile.namelist():
+                    logger.debug(f" processing {path}/{name_in_zip}")
+                    if name_in_zip.endswith(".dcm"):
+                        with zipFile.open(name_in_zip, "r") as zip_fp:
+                            yield [rowid, f"{path}/{name_in_zip}", _handle_dcm_fp(zip_fp)]
 
 
 def _path_handler(path: str) -> list:
@@ -96,7 +101,7 @@ def _path_handler(path: str) -> list:
         # TODO: .glob() performance at extreme scales limits scale
         paths = sorted(Path(path).glob("**/*.zip"))
     else:
-        if not (str(p).endswith(".zip") or str(p).endswith(".Zip")):
+        if not (str(p).endswith(".dcm") or str(p).endswith(".zip") or str(p).endswith(".Zip")):
             raise ValueError(f"File {path} does not have a .zip or .Zip extension")
         paths = [path]
 

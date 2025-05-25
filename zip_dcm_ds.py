@@ -159,7 +159,6 @@ class ZipDCMDataSourceReader(DataSourceReader):
         # Library imports must be within the method.
         return _readzipdcm(partition, self.paths, self.dicom_keys_filter)
 
-
 class ZipDCMDataSource(DataSource):
     """
     A data source for batch query over zipped DICOM files the `ZipFile` and `PyDicom` libraries.

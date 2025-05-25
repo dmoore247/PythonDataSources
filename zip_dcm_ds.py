@@ -63,6 +63,7 @@ def _readzipdcm(
                     with zipFile.open(name_in_zip, "r") as zip_fp:
                         with dcmread(zip_fp) as ds:
                             meta = ds.to_json_dict()
+                            meta['hash'] = hashlib.sha1(zip_fp.read()).hexdigest()
                             meta["pixel_hash"] = hashlib.sha1(
                                 ds.pixel_array
                             ).hexdigest()

@@ -1,12 +1,21 @@
 import logging
-from typing import Iterator
+from typing import Iterator, Sequence, Tuple
 
-from pyspark.sql.datasource import DataSource, DataSourceReader
+from pyspark.sql.datasource import DataSource, DataSourceReader, InputPartition
 from pyspark.sql.types import StructType
 
 from zip_dcm_utils import RangePartition, _path_handler, _readzipdcm
 
 logger = logging.getLogger(__file__)
+
+DEFUALT_numPartitions = 2
+
+# DICOM header keys to delete before saving the metadata
+# raw pixel data - 0x7FE0, 0x0010
+# overlay data - 6000 3000
+# VOI LUT Sequence Attribute - 00283010
+# LUT Data Attribute - 00283006
+DEFAULT_dicomKeysFilter = "60003000,7FE00010,00283010,00283006"
 
 
 class ZipDCMDataSourceReader(DataSourceReader):
@@ -19,17 +28,21 @@ class ZipDCMDataSourceReader(DataSourceReader):
         self.schema: StructType = schema
         self.options = options
         self.path = self.options.get("path", None)
-        self.numPartitions = int(self.options.get("numPartitions", 2))
+        self.numPartitions = int(
+            self.options.get("numPartitions", DEFUALT_numPartitions)
+        )
         self.deep = False
         self.paths = None
 
-        # DICOM header keys to delete before saving the metadata
-        self.dicom_keys_filter = ["60003000", "7FE00010", "00283010", "00283006"]
+        self.dicom_keys_filter = self.options.get(
+            "dicomKeysFilter", DEFAULT_dicomKeysFilter
+        ).split(",")
+
         assert self.path is not None
 
         self.paths = _path_handler(self.path)
 
-    def partitions(self):
+    def partitions(self) -> Sequence[InputPartition]:
         """
         Compute 'splits' of the data to read
             self.paths is the list of files discovered and now need to be partitioned.
@@ -48,7 +61,7 @@ class ZipDCMDataSourceReader(DataSourceReader):
         logger.debug(f"#partitions {len(partitions)} {partitions}")
         return partitions
 
-    def read(self, partition) -> Iterator:
+    def read(self, partition: RangePartition) -> Iterator[Tuple]:
         """
         Executor level method, performs read by Range Partition
         """

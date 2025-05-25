@@ -1,4 +1,5 @@
 import logging
+from io import BufferedReader
 from typing import Any, Iterator, List
 
 from pyspark.sql.datasource import InputPartition
@@ -7,6 +8,10 @@ logger = logging.getLogger(__file__)
 
 
 class RangePartition(InputPartition):
+    """
+    This DataSource InputPartition class provides tracking of ranges within a list
+    """
+
     def __init__(self, start, end):
         self.start = start
         self.end = end
@@ -31,8 +36,12 @@ def _readzipdcm(
     Yields:
         list: A list containing:
             - rowid (int): Unique row identifier.
-            - zip_file_path (str): Path to the ZIP file.
-            - name_in_zip (str): Name of the DICOM file within the ZIP archive.
+            - Either concatenation of:
+                - zip_file_path (str): Path to the ZIP file.
+                - '/'
+                - name_in_zip (str): Name of the DICOM file within the ZIP archive.
+            Or:
+                - dcm_file_path (str): Path to the dcm file.
             - meta (dict): Filtered DICOM metadata dictionary with an added 'pixel_hash' key.
 
     Notes:
@@ -46,7 +55,7 @@ def _readzipdcm(
 
     from pydicom import dcmread
 
-    def _handle_dcm_fp(fp):
+    def _handle_dcm_fp(fp: BufferedReader):
         with dcmread(fp) as ds:
             meta = ds.to_json_dict()
             meta["hash"] = hashlib.sha1(fp.read()).hexdigest()

@@ -43,8 +43,10 @@ def test_ZipDCMDataSourceReader():
         results = r.read(part)
         logger.debug([_ for _ in results])
 
+
 def test_wrongfile(spark):
     from pyspark.errors import AnalysisException
+
     with pytest.raises(AnalysisException):
         df = (
             spark.read.option("numPartitions", "1")
@@ -53,8 +55,10 @@ def test_wrongfile(spark):
         )
         result = df.collect()
 
+
 def test_wrongpath(spark):
     from pyspark.errors import AnalysisException
+
     with pytest.raises(AnalysisException):
         df = (
             spark.read.option("numPartitions", "1")
@@ -62,6 +66,7 @@ def test_wrongpath(spark):
             .load("./resources/wrongpath")
         )
         result = df.collect()
+
 
 def test_dcm(spark):
     df = (
@@ -72,6 +77,7 @@ def test_dcm(spark):
     result = df.collect()
     assert len(result) == 1
     logger.debug(f"test_single result: {result}")
+
 
 def test_single(spark):
     df = (

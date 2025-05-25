@@ -86,4 +86,5 @@ class ZipDCMDataSource(DataSource):
 
 if __name__ == "__main__":
     from zip_dcm_ds_test import test_ZipDCMDataSourceReader
+
     test_ZipDCMDataSourceReader()

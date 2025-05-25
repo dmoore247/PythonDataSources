@@ -1,39 +1,50 @@
-from pyspark.sql.datasource import DataSource, DataSourceReader
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
-from pyspark.sql.types import StructType
-from zip_dcm_ds import ZipDCMDataSource
-
 import logging
+import sys
+
+import pytest
+from pyspark.sql import SparkSession
+
+from zip_dcm_ds import ZipDCMDataSource, ZipDCMDataSourceReader
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter(
     "%(asctime)s - %(filename)s:%(lineno)s - %(levelname)s - %(message)s"
 )
-# Create a handler (e.g., StreamHandler for console output)
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
-
-# Add the handler to the logger
 logger.addHandler(handler)
 
 
-def create_spark_session(app_name="PySpark DCM Zips Datasource Tester"):
-    """
-    Creates and returns a Spark Session
-    """
-    return (
-        SparkSession.builder.appName(app_name)
+@pytest.fixture(scope="session")
+def spark():
+    spark_session = (
+        SparkSession.builder.appName("PySpark DCM Zips Datasource Tester")
         .master("local[*]")
         .config("spark.memory.offHeap.enabled", "true")
         .config("spark.memory.offHeap.size", "1g")
         .getOrCreate()
     )
+    spark_session.dataSource.register(ZipDCMDataSource)
+    yield spark_session
+    spark_session.stop()
+
+
+def test_nospark():
+    zip_file_path = "./resources/dcms"
+    r = ZipDCMDataSourceReader(
+        schema="rowid, int, x string, y string, z string",
+        options={"path": zip_file_path, "numPartitions": 32},
+    )
+    partitions = r.partitions()
+    logger.debug([_ for _ in partitions])
+
+    for part in partitions:
+        results = r.read(part)
+        logger.debug([_ for _ in results])
 
 
 def test_single(spark):
-    # test a single zip (with a dcm and a license file)
     df = (
         spark.read.option("numPartitions", "1")
         .format("zipdcm")
@@ -41,28 +52,22 @@ def test_single(spark):
     )
     result = df.collect()
     assert len(result) == 1
-    print(result)
+    logger.debug(f"test_single result: {result}")
 
 
-def test_folder(spark):
-    # test on a folder of zips
+def test_folder(spark, tmp_path):
     df = (
         spark.read.option("numPartitions", "4")
         .format("zipdcm")
         .load("./resources/dcms")
     )
     df.limit(20).show()
-    df.write.format("csv").mode("overwrite").save("./saves")
+    save_path = tmp_path / "saves"
+    df.write.format("csv").mode("overwrite").save(str(save_path))
+    assert save_path.exists()
 
 
 if __name__ == "__main__":
-    logger.debug("Started")
+    import pytest
 
-    spark = create_spark_session()
-
-    # Add our custom Python DataSource for DICMO files storaged in a Zip Archive
-    spark.dataSource.register(ZipDCMDataSource)
-
-    test_single(spark)
-    test_folder(spark)
-    logger.debug("Finished")
+    sys.exit(pytest.main([__file__]))

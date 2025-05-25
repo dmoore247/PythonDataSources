@@ -82,10 +82,13 @@ def _path_handler(path: str) -> list:
     #
     from pathlib import Path
 
+    if path is None:
+        raise ValueError("path parmeter is None")
+
     p = Path(path)
     if not p.exists():
         logger.error(f"not exists {path}")
-        raise Exception(f"Not Found {path}")  # TODO: Fix exception type
+        raise FileNotFoundError(f"{path}")  # TODO: Fix exception type
 
     # conflate either a direct zip file path or a dir into one case
     if p.is_dir():
@@ -93,6 +96,8 @@ def _path_handler(path: str) -> list:
         # TODO: .glob() performance at extreme scales limits scale
         paths = sorted(Path(path).glob("**/*.zip"))
     else:
+        if not (str(p).endswith(".zip") or str(p).endswith(".Zip")):
+            raise ValueError(f"File {path} does not have a .zip or .Zip extension")
         paths = [path]
 
     length = len(paths)

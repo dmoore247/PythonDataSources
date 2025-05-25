@@ -98,7 +98,7 @@ Contributions are welcome! Please feel free to submit pull requests with new dat
 
 ## License
 
-This project is open source. Please refer to the LICENSE file for details.
+This project is open source. Please refer to the [LICENSE](./LICENSE) file for details.
 
 ## Resources
 

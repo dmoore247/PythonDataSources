@@ -106,14 +106,28 @@ def test_single(spark):
 
 def test_folder(spark, tmp_path):
     df = (
-        spark.read.option("numPartitions", "4")
+        spark.read.option("numPartitions", "2")
         .format("zipdcm")
         .load("./resources/dcms")
     )
     df.limit(20).show()
+
+    assert df.isEmpty() == False
     save_path = tmp_path / "saves"
     df.write.format("csv").mode("overwrite").save(str(save_path))
     assert save_path.exists()
+
+def test_rowid(spark):
+    df = (
+        spark.read.option("numPartitions", "2")
+        .format("zipdcm")
+        .load("./resources/dcms")
+    )
+    df.limit(20).show()
+
+    df.registerTempTable('dicoms')
+    assert spark.sql("""select count(distinct rowid) from dicoms""").collect()[0][0] == 4
+   
 
 
 if __name__ == "__main__":

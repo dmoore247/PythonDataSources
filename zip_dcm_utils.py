@@ -74,6 +74,7 @@ def _readzipdcm(
         logger.debug(f"processing path: {path}")
         if str(path).endswith(".dcm"):
             with open(path, "rb") as fp:
+                rowid = rowid + 1
                 yield [rowid, path, _handle_dcm_fp(fp)]
         else:
             with ZipFile(path, "r") as zipFile:
@@ -81,6 +82,7 @@ def _readzipdcm(
                     logger.debug(f" processing {path}/{name_in_zip}")
                     if name_in_zip.endswith(".dcm"):
                         with zipFile.open(name_in_zip, "r") as zip_fp:
+                            rowid = rowid + 1
                             yield [
                                 rowid,
                                 f"{path}/{name_in_zip}",

@@ -35,7 +35,7 @@ class ZipDCMDataSource(DataSource):
         return "zipdcm"
     
     def schema(self):
-        return "rowid INT, zipfile STRING, dcmfile STRING, meta STRING"
+        return "rowid INT, path STRING, meta STRING"
     
     def reader(self, schema: StructType):
         return ZipDCMDataSourceReader(schema, self.options)

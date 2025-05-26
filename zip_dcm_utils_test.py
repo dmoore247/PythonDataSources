@@ -23,7 +23,7 @@ def test_path_handler_zip():
 def test_path_handler_folder():
     paths = _path_handler("./resources/dcms")
     assert paths is not None
-    assert len(paths) == 4
+    assert len(paths) == 5
 
 
 def test_path_handler_dcm():

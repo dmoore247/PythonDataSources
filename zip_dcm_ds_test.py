@@ -126,7 +126,7 @@ def test_rowid(spark):
     df.limit(20).show()
 
     df.registerTempTable('dicoms')
-    assert spark.sql("""select count(distinct rowid) from dicoms""").collect()[0][0] == 4
+    assert spark.sql("""select count(distinct rowid) from dicoms""").collect()[0][0] == 5
    
 
 

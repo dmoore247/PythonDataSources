@@ -60,7 +60,8 @@ def _readzipdcm(
         with dcmread(fp) as ds:
             meta = ds.to_json_dict()
             meta["hash"] = hashlib.sha1(fp.read()).hexdigest()
-            meta["pixel_hash"] = hashlib.sha1(ds.PixelData).hexdigest()
+            if "7FE00010" in meta: # will throw exception if no pixel data available
+                meta["pixel_hash"] = hashlib.sha1(ds.PixelData).hexdigest()
             if meta is None:
                 meta = ""
             for key in dicom_keys_filter:
@@ -71,23 +72,27 @@ def _readzipdcm(
 
     rowid = partition.start
     for path in paths[partition.start : partition.end]:
-        logger.debug(f"processing path: {path}")
-        if str(path).endswith(".dcm"):
-            with open(path, "rb") as fp:
-                rowid = rowid + 1
-                yield [rowid, path, _handle_dcm_fp(fp)]
-        else:
-            with ZipFile(path, "r") as zipFile:
-                for name_in_zip in zipFile.namelist():
-                    logger.debug(f" processing {path}/{name_in_zip}")
-                    if name_in_zip.endswith(".dcm"):
-                        with zipFile.open(name_in_zip, "r") as zip_fp:
-                            rowid = rowid + 1
-                            yield [
-                                rowid,
-                                f"{path}/{name_in_zip}",
-                                _handle_dcm_fp(zip_fp),
-                            ]
+        try:
+            logger.debug(f"processing path: {path}")
+            if str(path).endswith(".dcm"):
+                with open(path, "rb") as fp:
+                    rowid = rowid + 1
+                    yield [rowid, path, _handle_dcm_fp(fp)]
+            else:
+                with ZipFile(path, "r") as zipFile:
+                    for name_in_zip in zipFile.namelist():
+                        logger.debug(f" processing {path}/{name_in_zip}")
+                        if name_in_zip.endswith(".dcm"):
+                            with zipFile.open(name_in_zip, "r") as zip_fp:
+                                rowid = rowid + 1
+                                yield [
+                                    rowid,
+                                    f"{path}/{name_in_zip}",
+                                    _handle_dcm_fp(zip_fp),
+                                ]
+        except Exception as e:
+            logger.error(f"Processing {path} caused exception: {e}")
+            raise Exception(f"Processing {path} caused exception: {e}")
 
 
 def _path_handler(

@@ -60,7 +60,7 @@ def _readzipdcm(
         with dcmread(fp) as ds:
             meta = ds.to_json_dict()
             meta["hash"] = hashlib.sha1(fp.read()).hexdigest()
-            if "7FE00010" in meta: # will throw exception if no pixel data available
+            if "7FE00010" in meta:  # will throw exception if no pixel data available
                 meta["pixel_hash"] = hashlib.sha1(ds.PixelData).hexdigest()
             if meta is None:
                 meta = ""
@@ -81,13 +81,13 @@ def _readzipdcm(
             else:
                 with ZipFile(path, "r") as zipFile:
                     for name_in_zip in zipFile.namelist():
-                        logger.debug(f" processing {path}/{name_in_zip}")
+                        logger.debug(f" processing {path}::{name_in_zip}")
                         if name_in_zip.endswith(".dcm"):
                             with zipFile.open(name_in_zip, "r") as zip_fp:
                                 rowid = rowid + 1
                                 yield [
                                     rowid,
-                                    f"{path}/{name_in_zip}",
+                                    f"{path}::{name_in_zip}",
                                     _handle_dcm_fp(zip_fp),
                                 ]
         except Exception as e:

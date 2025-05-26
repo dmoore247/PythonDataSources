@@ -117,6 +117,7 @@ def test_folder(spark, tmp_path):
     df.write.format("csv").mode("overwrite").save(str(save_path))
     assert save_path.exists()
 
+
 def test_rowid(spark):
     df = (
         spark.read.option("numPartitions", "2")
@@ -125,9 +126,10 @@ def test_rowid(spark):
     )
     df.limit(20).show()
 
-    df.registerTempTable('dicoms')
-    assert spark.sql("""select count(distinct rowid) from dicoms""").collect()[0][0] == 5
-   
+    df.registerTempTable("dicoms")
+    assert (
+        spark.sql("""select count(distinct rowid) from dicoms""").collect()[0][0] == 5
+    )
 
 
 if __name__ == "__main__":

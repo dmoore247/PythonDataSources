@@ -4,7 +4,7 @@ import sys
 import pytest
 from pyspark.sql import SparkSession
 
-from zip_dcm_ds import RangePartition, ZipDCMDataSource, ZipDCMDataSourceReader
+from zip_dcm_ds import ZipDCMDataSource, ZipDCMDataSourceReader
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)

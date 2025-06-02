@@ -5,7 +5,8 @@ from pyarrow import RecordBatch
 from pyspark.sql.datasource import DataSource, DataSourceReader, InputPartition
 from pyspark.sql.types import StructType
 
-from zip_dcm_utils import RangePartition, _path_handler, _readzipdcm
+from zip_dcm_utils import (BucketPartition, _bucket_partition_handler,
+                           _path_handler, _readzipdcm_by_bucketpartition)
 
 logger = logging.getLogger(__file__)
 
@@ -43,7 +44,7 @@ class ZipDCMDataSourceReader(DataSourceReader):
         assert self.path is not None
         self.paths = _path_handler(self.path, self.pathGlobFilter)
 
-    def partitions(self) -> Sequence[RangePartition]:
+    def partitions(self) -> Sequence[BucketPartition]:
         """
         Compute 'splits' of the data to read
             self.paths is the list of files discovered and now need to be partitioned.
@@ -51,16 +52,8 @@ class ZipDCMDataSourceReader(DataSourceReader):
         logger.debug(
             f"ZipDCMDataSourceReader.partitions({self.numPartitions}, {self.path}, paths: {self.paths}): "
         )
-        length = len(self.paths)
-        partitions = []
-        partition_size_max = int(max(1, length / self.numPartitions))
-        start = 0
-        while start < length:
-            end = min(length, start + partition_size_max)
-            partitions.append(RangePartition(start, end))
-            start = start + partition_size_max
-        logger.debug(f"#partitions {len(partitions)} {partitions}")
-        return partitions
+
+        return _bucket_partition_handler(self.paths)
 
     def read(
         self, partition: InputPartition
@@ -76,7 +69,7 @@ class ZipDCMDataSourceReader(DataSourceReader):
         assert self.paths is not None, f"path: {self.path}"
 
         # Library imports must be within the method.
-        return _readzipdcm(partition, self.paths, self.dicom_keys_filter)
+        return _readzipdcm_by_bucketpartition(partition, self.dicom_keys_filter)
 
 
 class ZipDCMDataSource(DataSource):
